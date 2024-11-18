@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f8ff;
+            position: relative;
+            height: 100vh;
+        }
+
+        .ball {
+            position: absolute;
+            border-radius: 50%;
+            background-color: #ff4500;
+        }
+
+        .pot {
+            position: fixed;
+            width: 100px;
+            height: 100px;
+            background-color: red;
+            border-radius: 50%;
+            z-index: 9999;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="pot"></div>
+    <script>
+        const potEle = document.querySelector('.pot');
+        const screenHeight = window.innerHeight;
+        const screenWidth = window.innerWidth;
+        const elementHeight = potEle.offsetHeight;
+        const elementWidth = potEle.offsetWidth;
+        const range = 10;
+
+        // 设置元素初始居中位置
+        const potInfo = {
+            top: (screenHeight / 2) - (elementHeight / 2),
+            left: (screenWidth / 2) - (elementWidth / 2),
+        };
+        potEle.style.top = potInfo.top + 'px';
+        potEle.style.left = potInfo.left + 'px';
+
+        // 记录按键状态
+        const keyState = {};
+
+        // 监听按键按下事件
+        window.onkeydown = function (e) {
+            keyState[e.keyCode] = true;
+        };
+
+        // 监听按键释放事件
+        window.onkeyup = function (e) {
+            keyState[e.keyCode] = false;
+        };
+
+        function updatePosition() {
+            let topPosition = parseInt(potEle.style.top);
+            let leftPosition = parseInt(potEle.style.left);
+
+            // 判断每个方向的按键是否被按下，并更新位置
+            if (keyState[37] || keyState[65]) { // ← 左
+                leftPosition = Math.max(leftPosition - range, 0);
+            }
+            if (keyState[39] || keyState[68]) { // → 右
+                leftPosition = Math.min(leftPosition + range, screenWidth - elementWidth);
+            }
+            if (keyState[38] || keyState[87]) { // ↑ 上
+                topPosition = Math.max(topPosition - range, 0);
+            }
+            if (keyState[40] || keyState[83]) { // ↓ 下
+                topPosition = Math.min(topPosition + range, screenHeight - elementHeight);
+            }
+
+            // 更新元素位置
+            potEle.style.top = topPosition + 'px';
+            potEle.style.left = leftPosition + 'px';
+
+            // 检查碰撞
+            checkCollision();
+
+            // 循环调用更新位置
+            requestAnimationFrame(updatePosition);
+        }
+
+        function checkCollision() {
+            const balls = document.querySelectorAll('.ball');
+            // getBoundingClientRect 返回元素的 大小 及其相对于视口的位置
+            const _potEle = document.querySelector('.pot');
+            const potRect = _potEle.getBoundingClientRect();
+
+            balls.forEach(ball => {
+                const ballRect = ball.getBoundingClientRect();
+                // 检测碰撞
+                if (
+                    potRect.left < ballRect.right &&
+                    potRect.right > ballRect.left &&
+                    potRect.top < ballRect.bottom &&
+                    potRect.bottom > ballRect.top
+                ) {
+                    ball.remove(); // 移除被碰撞的球
+                    // 变大
+                    _potEle.style.height = (potRect.height + 5) + 'px';
+                    _potEle.style.width = (potRect.width + 5) + 'px';
+                }
+            });
+        }
+
+        // 启动位置更新
+        updatePosition();
+
+        // 随机生成小球
+        function createBall() {
+            const ball = document.createElement('div');
+            const size = Math.random() * 20 + 10; // 随机大小 10-30px
+            const position = Math.random() * window.innerWidth; // 随机水平位置
+            const color = `hsl(${Math.random() * 360}, 100%, 50%)`; // 随机颜色
+
+            ball.className = 'ball';
+            ball.style.width = `${size}px`;
+            ball.style.height = `${size}px`;
+            ball.style.left = `${position}px`;
+            ball.style.top = `-50px`; // 初始位置在屏幕顶部外
+            ball.style.backgroundColor = color;
+
+            document.body.appendChild(ball);
+
+            // 动态移动小球
+            const fallSpeed = Math.random() * 2 + 1; // 随机下落速度
+            let top = -50; // 初始位置
+            const interval = setInterval(() => {
+                top += fallSpeed;
+                ball.style.top = `${top}px`;
+
+                // 如果超出屏幕则移除小球
+                if (top > window.innerHeight) {
+                    clearInterval(interval);
+                    ball.remove();
+                }
+            }, 16); // 每 16ms 更新一次位置，相当于 60fps
+        }
+
+        // 每隔 300ms 创建一个小球
+        setInterval(createBall, 300);
+    </script>
+
+
+</body>
+
+</html>
